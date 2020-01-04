@@ -16,14 +16,16 @@ jobs:
           tf_actions_version: $TF_VAR
           tf_actions_subcommand: 'fmt'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
       - name: 'Terraform Init'
         uses: hashicorp/terraform-github-actions@master
         with:
           tf_actions_version: $TF_VAR
           tf_actions_subcommand: 'init'
+          args: '-backend-config="organization=$ORG_NAME"'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORG_NAME: ${{ secrets.ORG_NAME }}
       - name: 'Terraform Validate'
         uses: hashicorp/terraform-github-actions@master
         with:
