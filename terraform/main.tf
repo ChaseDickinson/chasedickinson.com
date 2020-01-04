@@ -1,5 +1,6 @@
 locals {
-  org_name = var.org_name
+  org_name       = var.org_name
+  workspace_name = var.workspace_name
 }
 
 data "aws_caller_identity" "current" {}
