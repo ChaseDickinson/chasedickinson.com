@@ -19,7 +19,7 @@ resource "aws_s3_bucket_public_access_block" "this" {
 }
 
 resource "aws_acm_certificate" "this" {
-  domain_name       = substr(data.aws_route53_zone.registered.name, 0, length(data.aws_route53_zone.registered.name)-1)
+  domain_name       = substr(data.aws_route53_zone.registered.name, 0, length(data.aws_route53_zone.registered.name) - 1)
   validation_method = "DNS"
 
   lifecycle {
