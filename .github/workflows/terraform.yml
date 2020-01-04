@@ -20,7 +20,7 @@ jobs:
         with:
           tf_actions_version: 0.12.18
           tf_actions_subcommand: 'init'
-          args: '-backend-config="organization=$ORG_NAME"'
+          args: '-var=$ORG_NAME'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ORG_NAME: ${{ secrets.ORG_NAME }}

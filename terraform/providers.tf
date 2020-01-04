@@ -1,7 +1,10 @@
 terraform {
   required_version = "~> 0.12.18"
 
-  backend "remote" {}
+  backend "remote" {
+    hostname     = "app.terraform.io"
+    organization = local.org_name
+  }
 }
 
 provider "aws" {

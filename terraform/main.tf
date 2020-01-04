@@ -1,3 +1,7 @@
+locals {
+  org_name = var.org_name
+}
+
 data "aws_caller_identity" "current" {}
 
 resource "aws_s3_bucket" "web_origin" {
