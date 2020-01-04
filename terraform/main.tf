@@ -42,5 +42,7 @@ resource "aws_acm_certificate_validation" "this" {
 
 //TODO
 //  - CloudFront distribution
+//  - Origin access identity
+//  - S3 bucket policy
 //  - Web content
 //  - GitHub Actions
