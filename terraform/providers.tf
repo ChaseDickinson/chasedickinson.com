@@ -5,7 +5,7 @@ terraform {
     hostname     = "app.terraform.io"
     organization = local.org_name
 
-    workspace {
+    workspaces {
       name = local.workspace_name
     }
   }
