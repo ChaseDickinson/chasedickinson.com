@@ -14,7 +14,7 @@ data "aws_iam_policy_document" "bucket_access" {
 
     principals {
       type        = "AWS"
-      identifiers = aws_cloudfront_origin_access_identity.this.iam_arn
+      identifiers = [aws_cloudfront_origin_access_identity.this.iam_arn]
     }
   }
 }
