@@ -4,6 +4,21 @@ data "aws_route53_zone" "registered" {
   name = "chasedickinson.com."
 }
 
+data "aws_iam_policy_document" "bucket_access" {
+  statement {
+    sid = "CloudFrontOriginAccess"
+
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
+    resources = ["${aws_s3_bucket.web_origin.arn}/*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = aws_cloudfront_origin_access_identity.this.iam_arn
+    }
+  }
+}
+
 locals {
   primary_origin = "primary-origin"
   web_domain     = substr(data.aws_route53_zone.registered.name, 0, length(data.aws_route53_zone.registered.name) - 1)
@@ -21,6 +36,11 @@ resource "aws_s3_bucket_public_access_block" "this" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_policy" "b" {
+  bucket = aws_s3_bucket.web_origin.id
+  policy = data.aws_iam_policy_document.bucket_access.json
 }
 
 resource "aws_acm_certificate" "this" {
@@ -99,6 +119,8 @@ resource "aws_cloudfront_distribution" "this" {
     ssl_support_method       = "sni-only"
   }
 }
+
+
 
 //TODO
 //  - S3 bucket policy
