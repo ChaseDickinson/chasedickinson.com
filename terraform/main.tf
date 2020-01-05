@@ -4,7 +4,7 @@ data "aws_route53_zone" "registered" {
   name = "chasedickinson.com."
 }
 
-data "aws_iam_policy_document" "bucket_access" {
+data "aws_iam_policy_document" "cloudfront_access" {
   statement {
     sid = "CloudFrontOriginAccess"
 
@@ -38,9 +38,9 @@ resource "aws_s3_bucket_public_access_block" "this" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_policy" "b" {
+resource "aws_s3_bucket_policy" "cloudfront_access" {
   bucket = aws_s3_bucket.web_origin.id
-  policy = data.aws_iam_policy_document.bucket_access.json
+  policy = data.aws_iam_policy_document.cloudfront_access.json
 }
 
 resource "aws_acm_certificate" "this" {
