@@ -23,6 +23,8 @@ jobs:
           tf_actions_working_dir: 'terraform'
           tf_actions_comment: false
           args: '-backend-config="token=${{ secrets.TF_API_TOKEN }}" -backend-config="organization=${{ secrets.ORG_NAME }}"'
+        env:
+          TF_WORKSPACE: dev
       - name: 'Terraform Validate'
         uses: hashicorp/terraform-github-actions@master
         with:
