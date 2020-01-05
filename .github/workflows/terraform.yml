@@ -20,10 +20,9 @@ jobs:
         with:
           tf_actions_version: 0.12.18
           tf_actions_subcommand: 'init'
-          tf_actions_cli_credentials_token: ${{ secrets.TF_CLOUD_CLI }}
           tf_actions_working_dir: 'terraform'
           tf_actions_comment: false
-          args: '-backend-config="organization=${{ secrets.ORG_NAME }}"'
+          args: '-backend-config="token=${{ secrets.TF_API_TOKEN }}" -backend-config="organization=${{ secrets.ORG_NAME }}"'
         env:
           TF_WORKSPACE: ${{ secrets.WORKSPACE_NAME }}
       - name: 'Terraform Validate'
@@ -38,6 +37,5 @@ jobs:
         with:
           tf_actions_version: 0.12.18
           tf_actions_subcommand: 'plan'
-          tf_actions_cli_credentials_token: ${{ secrets.TF_CLOUD_CLI }}
           tf_actions_working_dir: 'terraform'
           tf_actions_comment: false
