@@ -120,9 +120,18 @@ resource "aws_cloudfront_distribution" "this" {
   }
 }
 
+resource "aws_route53_record" "website" {
+  zone_id = data.aws_route53_zone.registered.zone_id
+  name    = local.web_domain
+  type    = "A"
 
+  alias {
+    name                   = aws_cloudfront_distribution.this.domain_name
+    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
 
 //TODO
-//  - S3 bucket policy
 //  - Web content
 //  - GitHub Actions
