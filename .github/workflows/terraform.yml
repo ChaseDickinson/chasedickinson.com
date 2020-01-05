@@ -39,3 +39,5 @@ jobs:
           tf_actions_subcommand: 'plan'
           tf_actions_working_dir: 'terraform'
           tf_actions_comment: false
+        env:
+          TF_WORKSPACE: prod
