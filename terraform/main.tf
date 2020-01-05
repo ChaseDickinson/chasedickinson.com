@@ -134,4 +134,6 @@ resource "aws_route53_record" "website" {
 
 //TODO
 //  - Web content
+//  - Second region
+//  - Blog
 //  - GitHub Actions
