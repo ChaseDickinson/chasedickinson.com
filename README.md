@@ -18,3 +18,7 @@ An image upload and its pull request go together:
 Upload before you merge, or the page goes live with broken images. Don't upload without opening the pull request. `scripts/prune-images.sh` removes any hashed file the live page doesn't link to once it is older than 7 days, so an upload with no merged pull request gets cleaned out. If a pull request stays open longer than that, run the prune script with a larger `--grace-days`.
 
 `scripts/prune-images.sh` prints what it would remove and deletes only with `--delete`.
+
+## Credits
+
+The home-screen icon is the cowboy hat face from Google's [Noto Emoji](https://github.com/googlefonts/noto-emoji), set on the page's orange.
