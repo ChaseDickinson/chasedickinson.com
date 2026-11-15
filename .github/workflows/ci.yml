@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push cancels an older pull request run, but never a run that is applying.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  TOFU_VERSION: 1.13.9
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - run: pip install pre-commit
+      - run: pre-commit run --all-files --show-diff-on-failure
+        env:
+          # The hook only makes sense on a developer's machine, and CI runs on main.
+          SKIP: no-commit-to-branch
+
+  plan:
+    needs: pre-commit
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: tofu
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
+          aws-region: us-east-1
+          mask-aws-account-id: true
+      # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
+      - name: Mask the account ID
+        run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
+      - run: tofu init -input=false -backend-config="bucket=${{ secrets.AWS_STATE_BUCKET }}"
+      - run: tofu validate
+      # The plan role is read-only, including on the state, so it plans without taking the lock.
+      - run: tofu plan -input=false -lock=false
+
+  apply:
+    needs: pre-commit
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: tofu
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_APPLY_ROLE_ARN }}
+          aws-region: us-east-1
+          mask-aws-account-id: true
+      # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
+      - name: Mask the account ID
+        run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
+      - run: tofu init -input=false -backend-config="bucket=${{ secrets.AWS_STATE_BUCKET }}"
+      - run: tofu plan -input=false -out=tfplan
+      - run: tofu apply -input=false tfplan
