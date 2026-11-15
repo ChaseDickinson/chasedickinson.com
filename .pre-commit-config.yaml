@@ -1,0 +1,52 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: check-executables-have-shebangs
+      - id: check-json
+      # The CloudFormation template uses !Ref and !Sub, which plain YAML parsers reject.
+      # cfn-lint checks that file instead.
+      - id: check-yaml
+        exclude: ^cloudformation/
+      - id: detect-private-key
+      - id: detect-aws-credentials
+        args: [--allow-missing-credentials]
+      # Changes go through pull requests, so refuse commits on the default branch.
+      - id: no-commit-to-branch
+        args: [--branch, main]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/aws-cloudformation/cfn-lint
+    rev: v1.60.1
+    hooks:
+      - id: cfn-lint
+        files: ^cloudformation/.*\.yml$
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+
+  - repo: local
+    hooks:
+      # The upstream hook runs ShellCheck in Docker, so use the installed binary.
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+      - id: tofu-fmt
+        name: tofu fmt
+        entry: tofu fmt -check -diff
+        language: system
+        files: \.(tf|tfvars)$
