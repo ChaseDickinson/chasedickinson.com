@@ -1,8 +1,17 @@
 # [ChaseDickinson.com](https://chasedickinson.com)
 
-Source code for my personal website.
+Source for my personal website and the AWS setup that serves it. The site is one static page in S3 behind CloudFront, managed with OpenTofu.
 
-Work in progress - playing around with GitHub Actions & Terraform Cloud
+## Layout
+
+- `site/` is the page and its fonts. Images live in the bucket, not here (see Images).
+- `tofu/` is the OpenTofu config for the bucket, the CloudFront distribution, the certificate, and DNS.
+- `cloudformation/bootstrap.yml` holds what OpenTofu needs before it can run: the state bucket, GitHub's sign-in to AWS, and the plan and apply roles. It is deployed by hand with `cloudformation/deploy.sh`, and OpenTofu never manages it.
+- `scripts/` publishes, checks, and prunes images.
+
+## How changes ship
+
+Every change is a pull request. CI runs the `pre-commit` hooks, `scripts/check-images.sh`, and `tofu plan`, and I read the plan in the Actions log before merging. Merging to `main` runs `tofu apply`, then syncs `site/` to the bucket. The page and fonts cache for 60 seconds, so a page change shows up within about a minute with no invalidation.
 
 ## Images
 

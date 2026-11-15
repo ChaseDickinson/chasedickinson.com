@@ -211,10 +211,3 @@ resource "aws_route53_record" "website" {
     evaluate_target_health = false
   }
 }
-
-//TODO
-//  - Web content
-//  - Second region
-//  - Site logging
-//  - Blog
-//  - GitHub Actions
