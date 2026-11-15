@@ -1,13 +1,20 @@
 terraform {
-  required_version = "= 0.12.18"
+  required_version = ">= 1.13"
+
   required_providers {
-    aws = "=2.43"
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
   }
 
-  backend "remote" {
-    workspaces {
-      prefix = "website-"
-    }
+  # The bucket name contains the account ID, so CI and local runs pass it with
+  # -backend-config="bucket=..." instead of writing it here.
+  backend "s3" {
+    key          = "website/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
   }
 }
 
