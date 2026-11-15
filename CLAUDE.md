@@ -5,7 +5,7 @@ Personal website, served from S3 behind CloudFront. The AWS resources are in `to
 ## Not obvious from the files
 
 - `cloudformation/bootstrap.yml` is what OpenTofu needs before it can run: the state bucket, GitHub OIDC sign-in, and the plan and apply roles. Deploy it by hand with `cloudformation/deploy.sh`. OpenTofu never manages it.
-- Photos and logos never go in this repo, which is public and MIT licensed. Images live in the S3 bucket and are uploaded by hand, and the site deploy sync excludes `images/`.
+- Photos and logos never go in this repo, which is public and MIT licensed. Images live in the S3 bucket and are uploaded by hand, and the site deploy sync excludes `images/`. Upload them with `scripts/publish-images.sh` and open the pull request that links them in the same session. An upload with no pull request looks unlinked, and `scripts/prune-images.sh` removes it after 7 days. See the README.
 
 ## Pull requests
 
