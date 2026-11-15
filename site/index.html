@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chase Dickinson</title>
+    <meta name="description" content="Chase Dickinson lives in Tulsa, Oklahoma, and is a loyal &amp; true alum of Oklahoma State.">
+    <meta name="color-scheme" content="light dark">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://chasedickinson.com/">
+    <meta property="og:title" content="Chase Dickinson">
+    <meta property="og:description" content="Chase Dickinson lives in Tulsa, Oklahoma, and is a loyal &amp; true alum of Oklahoma State.">
+    <meta property="og:image" content="https://chasedickinson.com/images/chase.jpg">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%A4%A0%3C/text%3E%3C/svg%3E">
+    <link rel="preload" href="fonts/roboto-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/roboto-400.woff2" as="font" type="font/woff2" crossorigin>
+    <style>
+        @font-face {
+            font-family: "Roboto";
+            font-weight: 400;
+            font-display: swap;
+            src: url("fonts/roboto-400.woff2") format("woff2");
+        }
+
+        @font-face {
+            font-family: "Roboto";
+            font-weight: 900;
+            font-display: swap;
+            src: url("fonts/roboto-900.woff2") format("woff2");
+        }
+
+        :root {
+            --page: #ffffff;
+            --ink: #171516;
+            --card: #ff7300;
+            --border: #171516;
+            --strip: #ffffff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page: #0f0e0f;
+                --border: #f2f2f2;
+                --strip: #171516;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: var(--page);
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            align-self: flex-start;
+            background: var(--card);
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            transition: box-shadow 0.3s;
+            text-align: center;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            margin: 0;
+            padding: 20px 0 0;
+            font: 900 36px "Roboto", sans-serif;
+            color: var(--ink);
+        }
+
+        .handle {
+            margin: 0;
+            font: 900 18px "Roboto", sans-serif;
+            color: var(--ink);
+        }
+
+        .bio {
+            margin: 0;
+            padding: 16px 20px 20px;
+            font: 400 18px/1.6 "Roboto", sans-serif;
+            color: var(--ink);
+        }
+
+        .card img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-top: 2px solid var(--border);
+        }
+
+        nav {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-evenly;
+            padding: 20px 0;
+            background: var(--strip);
+            border-top: 2px solid var(--border);
+        }
+
+        nav a {
+            display: block;
+            width: 50px;
+            height: 50px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        nav img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.2s;
+        }
+
+        nav a:hover img,
+        nav a:focus-visible img {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="card">
+        <h1>Chase Dickinson</h1>
+        <p class="handle">@Okie_Chase</p>
+        <p class="bio">
+            👋🏻 Hi, I'm Chase<br>
+            🎵 Living on Tulsa Time<br>
+            🤠 Loyal &amp; true Oklahoma State alum<br>
+            🤓 Professional nerd
+        </p>
+        <img src="images/chase.jpg" alt="Chase Dickinson" width="1000" height="1333" fetchpriority="high">
+        <nav aria-label="Social links">
+            <a href="https://github.com/ChaseDickinson">
+                <picture>
+                    <source media="(prefers-color-scheme: dark)" srcset="images/github-white.svg">
+                    <img src="images/github-black.svg" alt="GitHub">
+                </picture>
+            </a>
+            <a href="https://www.linkedin.com/in/chaseadickinson/">
+                <picture>
+                    <source media="(prefers-color-scheme: dark)" srcset="images/linkedin-white.svg">
+                    <img src="images/linkedin-black.svg" alt="LinkedIn">
+                </picture>
+            </a>
+            <a href="https://www.threads.com/@okie_chase">
+                <picture>
+                    <source media="(prefers-color-scheme: dark)" srcset="images/threads-white.svg">
+                    <img src="images/threads-black.svg" alt="Threads">
+                </picture>
+            </a>
+            <a href="https://www.instagram.com/okie_chase/">
+                <picture>
+                    <source media="(prefers-color-scheme: dark)" srcset="images/instagram-white.svg">
+                    <img src="images/instagram-black.svg" alt="Instagram">
+                </picture>
+            </a>
+        </nav>
+    </main>
+</body>
+
+</html>
