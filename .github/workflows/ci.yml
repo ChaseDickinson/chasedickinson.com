@@ -110,13 +110,11 @@ jobs:
       # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
       - name: Mask the account ID
         run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
-      # Photos are uploaded by hand, and excluding images/ also stops --delete from touching them.
+      # Images are uploaded by hand under content-hashed names by scripts/publish-images.sh, and
+      # excluding images/ also stops --delete from touching them. The page and fonts get a short
+      # cache time, so a change shows up within a minute and nothing needs an invalidation.
       - name: Sync the site
         run: |
           bucket="$(aws sts get-caller-identity --query Account --output text)-web-origin"
-          aws s3 sync site "s3://${bucket}" --delete --exclude "images/*"
-      - name: Clear the cached page
-        run: |
-          distribution="$(aws cloudfront list-distributions \
-            --query "DistributionList.Items[?Aliases.Items[0]=='chasedickinson.com'].Id | [0]" --output text)"
-          aws cloudfront create-invalidation --distribution-id "$distribution" --paths "/" "/index.html"
+          aws s3 sync site "s3://${bucket}" --delete --exclude "images/*" \
+            --cache-control "public, max-age=60"
