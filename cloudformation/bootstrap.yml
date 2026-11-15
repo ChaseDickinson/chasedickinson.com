@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Prerequisites for the chasedickinson.com OpenTofu config: the state bucket,
+  GitHub OIDC sign-in, and the roles CI assumes to plan and deploy. Deployed by
+  hand with cloudformation/deploy.sh, so it never depends on the tool it supports.
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Default: ChaseDickinson/chasedickinson.com
+    Description: owner/name of the repository allowed to assume the roles.
+  GitHubActorId:
+    Type: String
+    Default: "12686327"
+    Description: numeric GitHub user ID of the only account whose workflow runs may assume the roles.
+  DeployEnvironment:
+    Type: String
+    Default: production
+    Description: GitHub environment whose jobs may assume the apply role.
+  HostedZoneId:
+    Type: String
+    Description: Route 53 hosted zone the apply role may change. deploy.sh looks it up.
+
+Resources:
+  StateBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub "${AWS::AccountId}-terraform-state"
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  StateBucketTlsPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StateBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyPlainHttp
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt StateBucket.Arn
+              - !Sub "${StateBucket.Arn}/*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+
+  StateAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: website-terraform-state-access
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: s3:ListBucket
+            Resource: !GetAtt StateBucket.Arn
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+            Resource: !Sub "${StateBucket.Arn}/*"
+
+  # Plan role state access: read only. CI runs `tofu plan -lock=false`, so it never writes state.
+  StateReadAccessPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: website-terraform-state-read-access
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: s3:ListBucket
+            Resource: !GetAtt StateBucket.Arn
+          - Effect: Allow
+            Action: s3:GetObject
+            Resource: !Sub "${StateBucket.Arn}/*"
+
+  # What `tofu plan` reads, for the services the site uses. Both roles get it. It can list
+  # object keys in any bucket but can't read their contents. Add a read action here if a plan reports AccessDenied.
+  PlanPermissions:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: website-github-plan-permissions
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: SiteServiceReads
+            Effect: Allow
+            Action:
+              - s3:ListAllMyBuckets
+              - s3:ListBucket
+              - s3:GetBucket*
+              - s3:GetAccelerateConfiguration
+              - s3:GetEncryptionConfiguration
+              - s3:GetLifecycleConfiguration
+              - s3:GetReplicationConfiguration
+              - cloudfront:Get*
+              - cloudfront:List*
+              - acm:Describe*
+              - acm:Get*
+              - acm:List*
+              - route53:Get*
+              - route53:List*
+              - tag:GetResources
+            Resource: "*"
+          - Sid: ScopedIamReads
+            Effect: Allow
+            Action:
+              - iam:GetRole
+              - iam:GetRolePolicy
+              - iam:ListRolePolicies
+              - iam:ListAttachedRolePolicies
+              - iam:ListInstanceProfilesForRole
+              - iam:GetPolicy
+              - iam:GetPolicyVersion
+              - iam:ListPolicyVersions
+            Resource:
+              - !Sub "arn:aws:iam::${AWS::AccountId}:role/website-*"
+              - !Sub "arn:aws:iam::${AWS::AccountId}:policy/website-*"
+
+  # Pull requests: read-only on AWS, and write access to the state lock file only.
+  PlanRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: website-github-plan
+      ManagedPolicyArns:
+        - !Ref PlanPermissions
+        - !Ref StateReadAccessPolicy
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:pull_request"
+                token.actions.githubusercontent.com:actor_id: !Ref GitHubActorId
+
+  # Deploys: this is the role that creates, changes and destroys the site's resources.
+  # Edit ApplyPermissions below to widen or narrow it.
+  ApplyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: website-github-apply
+      ManagedPolicyArns:
+        - !Ref StateAccessPolicy
+        - !Ref PlanPermissions
+        - !Ref ApplyPermissions
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:environment:${DeployEnvironment}"
+                token.actions.githubusercontent.com:actor_id: !Ref GitHubActorId
+
+  ApplyPermissions:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: website-github-apply-permissions
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # S3 only on the site bucket. The state bucket is reachable only through StateAccessPolicy.
+          - Sid: SiteBucket
+            Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub "arn:aws:s3:::${AWS::AccountId}-web-origin"
+              - !Sub "arn:aws:s3:::${AWS::AccountId}-web-origin/*"
+          - Sid: SiteServices
+            Effect: Allow
+            Action: cloudfront:*
+            Resource: "*"
+          # CloudFront only takes certificates from us-east-1. Requesting one has no resource ARN
+          # to scope to, so it gets a region condition instead.
+          - Sid: CertificateRequest
+            Effect: Allow
+            Action: acm:RequestCertificate
+            Resource: "*"
+            Condition:
+              StringEquals:
+                aws:RequestedRegion: us-east-1
+          - Sid: Certificates
+            Effect: Allow
+            Action: acm:*
+            Resource: !Sub "arn:aws:acm:us-east-1:${AWS::AccountId}:certificate/*"
+          # Reads on every zone come from PlanPermissions. Changes only on this site's zone.
+          - Sid: SiteZone
+            Effect: Allow
+            Action: route53:*
+            Resource:
+              - !Sub "arn:aws:route53:::hostedzone/${HostedZoneId}"
+              - "arn:aws:route53:::change/*"
+          - Sid: ServiceLinkedRoles
+            Effect: Allow
+            Action: iam:CreateServiceLinkedRole
+            Resource: "*"
+            Condition:
+              StringEquals:
+                iam:AWSServiceName: cloudfront.amazonaws.com
+          # No IAM writes. Nothing OpenTofu manages needs them, and role and policy writes let this
+          # role mint itself admin. Add them only with a permissions boundary if that changes.
+
+Outputs:
+  StateBucket:
+    Value: !Ref StateBucket
+  PlanRoleArn:
+    Value: !GetAtt PlanRole.Arn
+  ApplyRoleArn:
+    Value: !GetAtt ApplyRole.Arn
