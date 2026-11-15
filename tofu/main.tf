@@ -20,13 +20,17 @@ data "aws_iam_policy_document" "cloudfront_access" {
 }
 
 locals {
-  primary_origin = "primary-origin"
-  web_domain     = substr(data.aws_route53_zone.registered.name, 0, length(data.aws_route53_zone.registered.name) - 1)
+  web_origin_bucket = "${data.aws_caller_identity.current.account_id}-web-origin"
+  primary_origin    = "primary-origin"
+  web_domain        = "chasedickinson.com"
+
+  cert_validation_options = {
+    for option in aws_acm_certificate.this.domain_validation_options : option.domain_name => option
+  }
 }
 
 resource "aws_s3_bucket" "web_origin" {
-  bucket = "${data.aws_caller_identity.current.account_id}-web-origin"
-  acl    = "private"
+  bucket = local.web_origin_bucket
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {
@@ -53,16 +57,19 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_route53_record" "cert_validation" {
-  name    = aws_acm_certificate.this.domain_validation_options.0.resource_record_name
-  type    = aws_acm_certificate.this.domain_validation_options.0.resource_record_type
+  # Keyed by the domain, which is known up front, so the import block can target it.
+  for_each = toset([local.web_domain])
+
+  name    = local.cert_validation_options[each.key].resource_record_name
+  type    = local.cert_validation_options[each.key].resource_record_type
   zone_id = data.aws_route53_zone.registered.id
-  records = [aws_acm_certificate.this.domain_validation_options.0.resource_record_value]
+  records = [local.cert_validation_options[each.key].resource_record_value]
   ttl     = 60
 }
 
 resource "aws_acm_certificate_validation" "this" {
   certificate_arn         = aws_acm_certificate.this.arn
-  validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
+  validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
 resource "aws_cloudfront_origin_access_identity" "this" {
@@ -71,7 +78,8 @@ resource "aws_cloudfront_origin_access_identity" "this" {
 
 resource "aws_cloudfront_distribution" "this" {
   origin {
-    domain_name = aws_s3_bucket.web_origin.bucket_regional_domain_name
+    # The global endpoint, to match the live distribution. PR 4a moves to the regional one.
+    domain_name = aws_s3_bucket.web_origin.bucket_domain_name
     origin_id   = local.primary_origin
 
     s3_origin_config {
