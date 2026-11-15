@@ -10,21 +10,6 @@ data "aws_cloudfront_cache_policy" "caching_optimized" {
 
 data "aws_iam_policy_document" "cloudfront_access" {
   statement {
-    sid = "CloudFrontOriginAccess"
-
-    effect    = "Allow"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.web_origin.arn}/*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.this.iam_arn]
-    }
-  }
-
-  # Added before the distribution switches to origin access control, so the policy already
-  # allows the new path when the switch happens. The identity statement above goes in a later PR.
-  statement {
     sid = "CloudFrontServiceOriginAccess"
 
     effect    = "Allow"
@@ -95,10 +80,6 @@ resource "aws_route53_record" "cert_validation" {
 resource "aws_acm_certificate_validation" "this" {
   certificate_arn         = aws_acm_certificate.this.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
-}
-
-resource "aws_cloudfront_origin_access_identity" "this" {
-  comment = "Identity utilized by CloudFront to retrieve objects from S3 bucket."
 }
 
 resource "aws_cloudfront_origin_access_control" "this" {
