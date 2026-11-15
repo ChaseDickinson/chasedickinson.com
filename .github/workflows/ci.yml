@@ -34,6 +34,14 @@ jobs:
           # The hook only makes sense on a developer's machine, and CI runs on main.
           SKIP: no-commit-to-branch
 
+  # Blocks a merge that would put a page with images the live site doesn't serve yet.
+  images:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: scripts/check-images.sh
+
   plan:
     needs: pre-commit
     if: github.event_name == 'pull_request'
