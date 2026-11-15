@@ -43,6 +43,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# The confirmation prompt needs a terminal. Without one, read fails and set -e ends the
+# script with no message, so say so before doing any work.
+if $delete && [[ ! -t 0 ]]; then
+  echo "--delete needs a terminal to ask for confirmation, so run it in a terminal tab" >&2
+  exit 1
+fi
+
 # The bucket name holds the account ID, so build it here and never print it.
 bucket="$(aws sts get-caller-identity --query Account --output text)-web-origin"
 
