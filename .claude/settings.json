@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(tofu destroy*)",
+      "Bash(tofu apply -destroy*)",
+      "Bash(aws * delete-*)",
+      "Bash(aws s3 rm*)",
+      "Bash(aws s3 rb*)"
+    ]
+  }
+}
