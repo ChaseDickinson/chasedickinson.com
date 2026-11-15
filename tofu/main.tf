@@ -33,6 +33,7 @@ locals {
   web_origin_bucket = "${data.aws_caller_identity.current.account_id}-web-origin"
   primary_origin    = "primary-origin"
   web_domain        = "chasedickinson.com"
+  www_domain        = "www.chasedickinson.com"
 
   cert_validation_options = {
     for option in aws_acm_certificate.this.domain_validation_options : option.domain_name => option
@@ -57,9 +58,12 @@ resource "aws_s3_bucket_policy" "cloudfront_access" {
   policy = data.aws_iam_policy_document.cloudfront_access.json
 }
 
+# Adding a name replaces the certificate. The new one is created first, and the distribution
+# only switches to it through the validation resource below, once DNS validation finishes.
 resource "aws_acm_certificate" "this" {
-  domain_name       = local.web_domain
-  validation_method = "DNS"
+  domain_name               = local.web_domain
+  subject_alternative_names = [local.www_domain]
+  validation_method         = "DNS"
 
   lifecycle {
     create_before_destroy = true
@@ -67,8 +71,8 @@ resource "aws_acm_certificate" "this" {
 }
 
 resource "aws_route53_record" "cert_validation" {
-  # Keyed by the domain, which is known up front, so the import block can target it.
-  for_each = toset([local.web_domain])
+  # Keyed by the domain, which is known up front.
+  for_each = toset([local.web_domain, local.www_domain])
 
   name    = local.cert_validation_options[each.key].resource_record_name
   type    = local.cert_validation_options[each.key].resource_record_type
@@ -137,6 +141,49 @@ resource "aws_cloudfront_response_headers_policy" "security" {
   }
 }
 
+# Sends www to the apex and keeps the path and query. It runs on every request, since a
+# distribution can't attach a function to one host, and it passes apex requests through.
+resource "aws_cloudfront_function" "redirect_www" {
+  name    = "redirect-www-to-apex"
+  runtime = "cloudfront-js-2.0"
+  comment = "Redirects ${local.www_domain} to ${local.web_domain}."
+  publish = true
+
+  code = <<-EOT
+    function handler(event) {
+      var request = event.request;
+      var host = request.headers.host ? request.headers.host.value : "";
+
+      if (host !== "${local.www_domain}") {
+        return request;
+      }
+
+      var params = [];
+      var query = request.querystring;
+      for (var name in query) {
+        if (query[name].multiValue) {
+          query[name].multiValue.forEach(function (item) {
+            params.push(name + "=" + item.value);
+          });
+        } else {
+          params.push(name + "=" + query[name].value);
+        }
+      }
+
+      var location = "https://${local.web_domain}" + request.uri;
+      if (params.length > 0) {
+        location += "?" + params.join("&");
+      }
+
+      return {
+        statusCode: 301,
+        statusDescription: "Moved Permanently",
+        headers: { location: { value: location } }
+      };
+    }
+  EOT
+}
+
 resource "aws_cloudfront_distribution" "this" {
   origin {
     domain_name              = aws_s3_bucket.web_origin.bucket_regional_domain_name
@@ -149,7 +196,7 @@ resource "aws_cloudfront_distribution" "this" {
   comment             = "CDN used to distribute website."
   default_root_object = "index.html"
 
-  aliases = [local.web_domain]
+  aliases = [local.web_domain, local.www_domain]
 
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
@@ -164,6 +211,11 @@ resource "aws_cloudfront_distribution" "this" {
     compress                   = true
 
     viewer_protocol_policy = "redirect-to-https"
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.redirect_www.arn
+    }
   }
 
   price_class = "PriceClass_100"
@@ -175,7 +227,8 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate.this.arn
+    # The validated certificate, so the distribution never switches to one DNS hasn't confirmed.
+    acm_certificate_arn      = aws_acm_certificate_validation.this.certificate_arn
     minimum_protocol_version = "TLSv1.2_2021"
     ssl_support_method       = "sni-only"
   }
@@ -185,6 +238,33 @@ resource "aws_route53_record" "website" {
   zone_id = data.aws_route53_zone.registered.zone_id
   name    = local.web_domain
   type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.this.domain_name
+    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# The distribution has IPv6 on, so each name needs an AAAA record next to its A record.
+resource "aws_route53_record" "website_ipv6" {
+  zone_id = data.aws_route53_zone.registered.zone_id
+  name    = local.web_domain
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.this.domain_name
+    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "www" {
+  for_each = toset(["A", "AAAA"])
+
+  zone_id = data.aws_route53_zone.registered.zone_id
+  name    = local.www_domain
+  type    = each.key
 
   alias {
     name                   = aws_cloudfront_distribution.this.domain_name
