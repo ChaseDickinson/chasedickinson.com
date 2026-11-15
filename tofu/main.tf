@@ -4,6 +4,10 @@ data "aws_route53_zone" "registered" {
   name = "chasedickinson.com."
 }
 
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
 data "aws_iam_policy_document" "cloudfront_access" {
   statement {
     sid = "CloudFrontOriginAccess"
@@ -154,13 +158,9 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 
 resource "aws_cloudfront_distribution" "this" {
   origin {
-    # The global endpoint, to match the live distribution. PR 4a moves to the regional one.
-    domain_name = aws_s3_bucket.web_origin.bucket_domain_name
-    origin_id   = local.primary_origin
-
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.this.cloudfront_access_identity_path
-    }
+    domain_name              = aws_s3_bucket.web_origin.bucket_regional_domain_name
+    origin_id                = local.primary_origin
+    origin_access_control_id = aws_cloudfront_origin_access_control.this.id
   }
 
   enabled             = true
@@ -175,18 +175,14 @@ resource "aws_cloudfront_distribution" "this" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = local.primary_origin
 
-    forwarded_values {
-      query_string = false
-
-      cookies {
-        forward = "none"
-      }
-    }
+    # Caches by the origin's Cache-Control header, between 1 second and 1 year: the page and
+    # fonts send 60 seconds, and hashed images send a year. Query strings and cookies are not
+    # part of the key. Compression is on.
+    cache_policy_id            = data.aws_cloudfront_cache_policy.caching_optimized.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security.id
+    compress                   = true
 
     viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 60 * 60 * 1
-    max_ttl                = 60 * 60 * 24 * 1
   }
 
   price_class = "PriceClass_100"
@@ -199,7 +195,7 @@ resource "aws_cloudfront_distribution" "this" {
 
   viewer_certificate {
     acm_certificate_arn      = aws_acm_certificate.this.arn
-    minimum_protocol_version = "TLSv1.2_2018"
+    minimum_protocol_version = "TLSv1.2_2021"
     ssl_support_method       = "sni-only"
   }
 }
