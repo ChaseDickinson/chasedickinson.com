@@ -1,0 +1,4 @@
+# Match the versions CI uses in .github/workflows/ci.yml.
+[tools]
+python = "3.13"
+opentofu = "1.13.9"
