@@ -118,6 +118,7 @@ Resources:
               - s3:GetReplicationConfiguration
               - cloudfront:Get*
               - cloudfront:List*
+              - cloudfront:DescribeFunction
               - acm:Describe*
               - acm:Get*
               - acm:List*
