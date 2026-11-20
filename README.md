@@ -7,7 +7,11 @@ Source for my personal website and the AWS setup that serves it. The site is one
 - `site/` is the page and its fonts. Images live in the bucket, not here (see Images).
 - `tofu/` is the OpenTofu config for the bucket, the CloudFront distribution, the certificate, and DNS.
 - `cloudformation/bootstrap.yml` holds what OpenTofu needs before it can run: the state bucket, GitHub's sign-in to AWS, and the plan and apply roles. It is deployed by hand with `cloudformation/deploy.sh`, and OpenTofu never manages it.
-- `scripts/` publishes, checks, and prunes images.
+- `scripts/` previews the site and publishes, checks, and prunes images.
+
+## Preview locally
+
+Run `scripts/preview.sh` and open http://localhost:8000. It syncs the images from the bucket into `site/images/`, then serves `site/`. Pass a port to use another one. Without AWS credentials it still serves, just without images.
 
 ## How changes ship
 
