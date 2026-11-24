@@ -11,7 +11,7 @@ Source for my personal website and the AWS setup that serves it. The site is one
 
 ## Preview locally
 
-Run `mise install` once to get the Python and OpenTofu versions that `mise.toml` pins to match CI.
+Run `mise install` once to get the tool versions that `mise.toml` pins. CI installs from the same file, so local runs and CI use the same versions.
 
 Run `scripts/preview.sh` and open http://localhost:8000. It syncs the images from the bucket into `site/images/`, then serves `site/`. Pass a port to use another one. Without AWS credentials it still serves, just without images.
 

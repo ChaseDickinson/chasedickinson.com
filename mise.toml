@@ -1,4 +1,7 @@
-# Match the versions CI uses in .github/workflows/ci.yml.
+# The one place tool versions live. CI installs from this file with jdx/mise-action.
 [tools]
 python = "3.13"
 opentofu = "1.13.9"
+pre-commit = "4.7.0"
+shellcheck = "0.11.0"
+aws-cli = "2.42.1"

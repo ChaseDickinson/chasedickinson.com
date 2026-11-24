@@ -13,22 +13,14 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  TOFU_VERSION: 1.13.9
-
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
-          python-version: "3.13"
-      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
-        with:
-          tofu_version: ${{ env.TOFU_VERSION }}
-          tofu_wrapper: false
-      - run: pip install pre-commit
+          install_args: python opentofu pre-commit shellcheck
       - run: pre-commit run --all-files --show-diff-on-failure
         env:
           # The hook only makes sense on a developer's machine, and CI runs on main.
@@ -54,18 +46,12 @@ jobs:
         working-directory: tofu
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
-          tofu_version: ${{ env.TOFU_VERSION }}
-          tofu_wrapper: false
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+          install_args: opentofu
+      - uses: ./.github/actions/aws
         with:
           role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
-          aws-region: us-east-1
-          mask-aws-account-id: true
-      # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
-      - name: Mask the account ID
-        run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
       - run: tofu init -input=false -backend-config="bucket=${{ secrets.AWS_STATE_BUCKET }}"
       - run: tofu validate
       # The plan role is read-only, including on the state, so it plans without taking the lock.
@@ -84,18 +70,12 @@ jobs:
         working-directory: tofu
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
         with:
-          tofu_version: ${{ env.TOFU_VERSION }}
-          tofu_wrapper: false
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+          install_args: opentofu
+      - uses: ./.github/actions/aws
         with:
           role-to-assume: ${{ secrets.AWS_APPLY_ROLE_ARN }}
-          aws-region: us-east-1
-          mask-aws-account-id: true
-      # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
-      - name: Mask the account ID
-        run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
       - run: tofu init -input=false -backend-config="bucket=${{ secrets.AWS_STATE_BUCKET }}"
       - run: tofu plan -input=false -out=tfplan
       - run: tofu apply -input=false tfplan
@@ -110,14 +90,9 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+      - uses: ./.github/actions/aws
         with:
           role-to-assume: ${{ secrets.AWS_APPLY_ROLE_ARN }}
-          aws-region: us-east-1
-          mask-aws-account-id: true
-      # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
-      - name: Mask the account ID
-        run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
       # Images are uploaded by hand under content-hashed names by scripts/publish-images.sh, and
       # excluding images/ also stops --delete from touching them. The page and fonts get a short
       # cache time, so a change shows up within a minute and nothing needs an invalidation.

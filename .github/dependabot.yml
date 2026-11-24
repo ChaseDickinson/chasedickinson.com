@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Actions are pinned to commit SHAs, so this keeps the SHAs and their version comments current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      hooks:
+        patterns: ["*"]
+
+  # Reads tofu/.terraform.lock.hcl and the provider constraint in providers.tf.
+  - package-ecosystem: terraform
+    directory: /tofu
+    schedule:
+      interval: monthly
+    groups:
+      providers:
+        patterns: ["*"]
