@@ -13,6 +13,10 @@ Parameters:
     Type: String
     Default: "12686327"
     Description: numeric GitHub user ID of the only account whose workflow runs may assume the roles.
+  DependabotActorId:
+    Type: String
+    Default: "49699333"
+    Description: numeric GitHub user ID of dependabot[bot]. Only the plan role trusts it, so Dependabot pull requests can run tofu plan.
   DeployEnvironment:
     Type: String
     Default: production
@@ -141,7 +145,9 @@ Resources:
               - !Sub "arn:aws:iam::${AWS::AccountId}:role/website-*"
               - !Sub "arn:aws:iam::${AWS::AccountId}:policy/website-*"
 
-  # Pull requests: read-only on AWS, and write access to the state lock file only.
+  # Pull requests: read-only on AWS, state included. Dependabot pull requests can assume it too,
+  # which means code from an upstream release can run with these read-only credentials before
+  # anyone reads the diff. The apply role does not trust Dependabot.
   PlanRole:
     Type: AWS::IAM::Role
     Properties:
@@ -160,7 +166,9 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
                 token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:pull_request"
-                token.actions.githubusercontent.com:actor_id: !Ref GitHubActorId
+                token.actions.githubusercontent.com:actor_id:
+                  - !Ref GitHubActorId
+                  - !Ref DependabotActorId
 
   # Deploys: this is the role that creates, changes and destroys the site's resources.
   # Edit ApplyPermissions below to widen or narrow it.
