@@ -18,6 +18,10 @@ usage() {
   echo "usage: $0 [--delete] [--grace-days N] [--keep NAME]..." >&2
 }
 
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=lib.sh
+source "$root/scripts/lib.sh"
+
 delete=false
 grace_days=7
 keep_list=""
@@ -50,8 +54,7 @@ if $delete && [[ ! -t 0 ]]; then
   exit 1
 fi
 
-# The bucket name holds the account ID, so build it here and never print it.
-bucket="$(aws sts get-caller-identity --query Account --output text)-web-origin"
+bucket="$(web_bucket)"
 
 referenced="$(aws s3 cp "s3://$bucket/index.html" - | grep -o 'images/[^"]*' | sort -u || true)"
 if [[ -z "$referenced" ]]; then

@@ -13,14 +13,15 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 port="${1:-8000}"
+# shellcheck source=lib.sh
+source "$root/scripts/lib.sh"
 
 if [[ ! "$port" =~ ^[0-9]+$ ]]; then
   echo "usage: $0 [port]" >&2
   exit 2
 fi
 
-# The bucket name holds the account ID, so build it here and never print it.
-if bucket="$(aws sts get-caller-identity --query Account --output text 2> /dev/null)-web-origin" &&
+if bucket="$(web_bucket 2> /dev/null)" &&
   aws s3 sync "s3://$bucket/images" "$root/site/images" --only-show-errors; then
   :
 else

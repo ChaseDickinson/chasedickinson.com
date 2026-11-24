@@ -42,7 +42,7 @@ repos:
       # The upstream hook runs ShellCheck in Docker, so use the installed binary.
       - id: shellcheck
         name: shellcheck
-        entry: shellcheck
+        entry: shellcheck -x --source-path=SCRIPTDIR
         language: system
         types: [shell]
       - id: tofu-fmt

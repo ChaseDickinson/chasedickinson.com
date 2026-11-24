@@ -17,6 +17,8 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 images="$root/site/images"
 page="$root/site/index.html"
 dry_run=false
+# shellcheck source=lib.sh
+source "$root/scripts/lib.sh"
 
 case "${1:-}" in
   "") ;;
@@ -40,10 +42,9 @@ content_type() {
   esac
 }
 
-# The bucket name holds the account ID, so build it here and never print it.
 bucket=""
 if ! $dry_run; then
-  bucket="$(aws sts get-caller-identity --query Account --output text)-web-origin"
+  bucket="$(web_bucket)"
 fi
 
 new_page="$(mktemp)"
@@ -89,5 +90,5 @@ else
   cp "$new_page" "$page"
   echo
   echo "Updated site/index.html. Commit it, then merge the pull request."
-  echo "Old hashed images stay in the bucket. Delete one by hand once nothing links to it."
+  echo "Old hashed images stay in the bucket. Run scripts/prune-images.sh to see which ones nothing links to."
 fi
