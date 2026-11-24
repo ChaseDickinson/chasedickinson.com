@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <meta name="color-scheme" content="light dark">
+    <title>Page not found | Chase Dickinson</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%A4%A0%3C/text%3E%3C/svg%3E">
+    <style>
+        @font-face {
+            font-family: "Roboto";
+            font-weight: 400;
+            font-display: swap;
+            src: url("/fonts/roboto-400.woff2") format("woff2");
+        }
+
+        @font-face {
+            font-family: "Roboto";
+            font-weight: 900;
+            font-display: swap;
+            src: url("/fonts/roboto-900.woff2") format("woff2");
+        }
+
+        :root {
+            --page: #ffffff;
+            --ink: #171516;
+            --card: #ff7300;
+            --border: #171516;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --page: #0f0e0f;
+                --border: #f2f2f2;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: var(--page);
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 500px;
+            align-self: flex-start;
+            box-sizing: border-box;
+            padding: 20px;
+            background: var(--card);
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+            text-align: center;
+            color: var(--ink);
+            font: 400 17px/1.5 "Roboto", sans-serif;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font: 900 36px "Roboto", sans-serif;
+        }
+
+        p {
+            margin: 0;
+        }
+
+        a {
+            color: var(--ink);
+            font-weight: 900;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="card">
+        <h1>Page not found</h1>
+        <p>Nothing lives at this address. <a href="/">Go to the home page</a>.</p>
+    </main>
+</body>
+
+</html>

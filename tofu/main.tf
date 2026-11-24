@@ -218,6 +218,22 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
+  # The bucket has no ListBucket grant for CloudFront, so S3 answers a missing key with 403.
+  # Both codes show the 404 page. The short TTL keeps a page added later from staying "missing".
+  custom_error_response {
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 10
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
+    error_caching_min_ttl = 10
+  }
+
   price_class = "PriceClass_100"
 
   restrictions {
@@ -234,10 +250,16 @@ resource "aws_cloudfront_distribution" "this" {
   }
 }
 
-resource "aws_route53_record" "website" {
+# Every name gets an A and an AAAA record, since the distribution has IPv6 on.
+resource "aws_route53_record" "alias" {
+  for_each = {
+    for pair in setproduct([local.web_domain, local.www_domain], ["A", "AAAA"]) :
+    "${pair[0]} ${pair[1]}" => { name = pair[0], type = pair[1] }
+  }
+
   zone_id = data.aws_route53_zone.registered.zone_id
-  name    = local.web_domain
-  type    = "A"
+  name    = each.value.name
+  type    = each.value.type
 
   alias {
     name                   = aws_cloudfront_distribution.this.domain_name
@@ -246,29 +268,22 @@ resource "aws_route53_record" "website" {
   }
 }
 
-# The distribution has IPv6 on, so each name needs an AAAA record next to its A record.
-resource "aws_route53_record" "website_ipv6" {
-  zone_id = data.aws_route53_zone.registered.zone_id
-  name    = local.web_domain
-  type    = "AAAA"
-
-  alias {
-    name                   = aws_cloudfront_distribution.this.domain_name
-    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
-    evaluate_target_health = false
-  }
+moved {
+  from = aws_route53_record.website
+  to   = aws_route53_record.alias["chasedickinson.com A"]
 }
 
-resource "aws_route53_record" "www" {
-  for_each = toset(["A", "AAAA"])
+moved {
+  from = aws_route53_record.website_ipv6
+  to   = aws_route53_record.alias["chasedickinson.com AAAA"]
+}
 
-  zone_id = data.aws_route53_zone.registered.zone_id
-  name    = local.www_domain
-  type    = each.key
+moved {
+  from = aws_route53_record.www["A"]
+  to   = aws_route53_record.alias["www.chasedickinson.com A"]
+}
 
-  alias {
-    name                   = aws_cloudfront_distribution.this.domain_name
-    zone_id                = aws_cloudfront_distribution.this.hosted_zone_id
-    evaluate_target_health = false
-  }
+moved {
+  from = aws_route53_record.www["AAAA"]
+  to   = aws_route53_record.alias["www.chasedickinson.com AAAA"]
 }
