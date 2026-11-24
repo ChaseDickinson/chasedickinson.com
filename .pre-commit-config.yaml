@@ -1,3 +1,7 @@
+# Hooks run on commit by default. Without this, installing the post-checkout hook would also
+# run every other hook after each branch switch.
+default_stages: [pre-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
