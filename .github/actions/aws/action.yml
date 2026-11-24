@@ -1,0 +1,20 @@
+name: AWS sign-in
+description: Assume a role through GitHub OIDC and hide the account ID in the public logs.
+
+inputs:
+  role-to-assume:
+    description: ARN of the role to assume.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+      with:
+        role-to-assume: ${{ inputs.role-to-assume }}
+        aws-region: us-east-1
+        mask-aws-account-id: true
+    # The repo is public and so are its logs. Mask the ID before anything prints a bucket name.
+    - name: Mask the account ID
+      shell: bash
+      run: echo "::add-mask::$(aws sts get-caller-identity --query Account --output text)"
