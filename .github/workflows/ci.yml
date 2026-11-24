@@ -55,7 +55,21 @@ jobs:
       - run: tofu init -input=false -backend-config="bucket=${{ secrets.AWS_STATE_BUCKET }}"
       - run: tofu validate
       # The plan role is read-only, including on the state, so it plans without taking the lock.
-      - run: tofu plan -input=false -lock=false
+      - name: Plan
+        run: tofu plan -input=false -lock=false -no-color | tee "$RUNNER_TEMP/plan.txt"
+      # Puts the plan on the run's summary page. Log masking may not apply to the summary,
+      # so the account ID is replaced by hand before anything is written to it.
+      - name: Show the plan in the job summary
+        if: always()
+        run: |
+          [[ -f "$RUNNER_TEMP/plan.txt" ]] || exit 0
+          account="$(aws sts get-caller-identity --query Account --output text)"
+          {
+            echo '## tofu plan'
+            echo '```'
+            tail -n 2000 "$RUNNER_TEMP/plan.txt" | sed "s/${account}/***/g"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   apply:
     needs: pre-commit
