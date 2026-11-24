@@ -6,16 +6,24 @@ updates:
     schedule:
       interval: monthly
     groups:
+      actions-major:
+        patterns: ["*"]
+        update-types: ["major"]
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: pre-commit
     directory: /
     schedule:
       interval: monthly
     groups:
+      hooks-major:
+        patterns: ["*"]
+        update-types: ["major"]
       hooks:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # Reads tofu/.terraform.lock.hcl and the provider constraint in providers.tf.
   - package-ecosystem: terraform
@@ -23,5 +31,9 @@ updates:
     schedule:
       interval: monthly
     groups:
+      providers-major:
+        patterns: ["*"]
+        update-types: ["major"]
       providers:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
