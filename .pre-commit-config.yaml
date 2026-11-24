@@ -1,3 +1,7 @@
+# Hooks run on commit by default. Without this, installing the post-checkout hook would also
+# run every other hook after each branch switch.
+default_stages: [pre-commit]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -50,3 +54,13 @@ repos:
         entry: tofu fmt -check -diff
         language: system
         files: \.(tf|tfvars)$
+      # Only runs after a branch switch, and only once `pre-commit install --hook-type post-checkout`
+      # has been run locally. CI and normal commits never run it.
+      - id: check-dependabot
+        name: open Dependabot branches
+        entry: scripts/check-dependabot.sh
+        language: system
+        stages: [post-checkout]
+        always_run: true
+        pass_filenames: false
+        verbose: true
