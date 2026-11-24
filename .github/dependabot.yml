@@ -5,6 +5,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Wait 30 days after a release so a compromised one is likely pulled before a PR opens.
+    # Security updates ignore this.
+    cooldown:
+      default-days: 30
     groups:
       actions-major:
         patterns: ["*"]
@@ -17,6 +21,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Wait 30 days after a release so a compromised one is likely pulled before a PR opens.
+    # Security updates ignore this.
+    cooldown:
+      default-days: 30
     groups:
       hooks-major:
         patterns: ["*"]
@@ -30,6 +38,10 @@ updates:
     directory: /tofu
     schedule:
       interval: monthly
+    # Wait 30 days after a release so a compromised one is likely pulled before a PR opens.
+    # Security updates ignore this.
+    cooldown:
+      default-days: 30
     groups:
       providers-major:
         patterns: ["*"]
