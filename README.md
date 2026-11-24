@@ -17,6 +17,10 @@ Run `mise install` once to get the tool versions that `mise.toml` pins. CI insta
 
 Run `scripts/preview.sh` and open http://localhost:8000. It syncs the images from the bucket into `site/images/`, then serves `site/`. Pass a port to use another one. Without AWS credentials it still serves, just without images.
 
+## Dependabot reminder
+
+Dependabot opens the only pull requests besides mine. To see them when you switch branches, run `pre-commit install --hook-type post-checkout` once. After that, `git switch` prints any open Dependabot branches on origin, and prints nothing when there are none or the remote is unreachable. The hook only reports and never blocks a checkout. It lives in `scripts/check-dependabot.sh`.
+
 ## How changes ship
 
 Every change is a pull request. CI runs the `pre-commit` hooks, `scripts/check-images.sh`, and `tofu plan`, and I read the plan on the run's summary page before merging. Merging to `main` runs `tofu apply`, then syncs `site/` to the bucket. The page and fonts cache for 60 seconds, so a page change shows up within about a minute with no invalidation.

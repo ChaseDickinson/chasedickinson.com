@@ -50,3 +50,13 @@ repos:
         entry: tofu fmt -check -diff
         language: system
         files: \.(tf|tfvars)$
+      # Only runs after a branch switch, and only once `pre-commit install --hook-type post-checkout`
+      # has been run locally. CI and normal commits never run it.
+      - id: check-dependabot
+        name: open Dependabot branches
+        entry: scripts/check-dependabot.sh
+        language: system
+        stages: [post-checkout]
+        always_run: true
+        pass_filenames: false
+        verbose: true
