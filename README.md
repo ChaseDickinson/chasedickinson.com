@@ -7,11 +7,13 @@ Source for my personal website and the AWS setup that serves it. The site is one
 - `site/` is the page and its fonts. Images live in the bucket, not here (see Images).
 - `tofu/` is the OpenTofu config for the bucket, the CloudFront distribution, the certificate, and DNS.
 - `cloudformation/bootstrap.yml` holds what OpenTofu needs before it can run: the state bucket, GitHub's sign-in to AWS, and the plan and apply roles. It is deployed by hand with `cloudformation/deploy.sh`, and OpenTofu never manages it.
-- `scripts/` previews the site and publishes, checks, and prunes images.
+- `scripts/` previews the site, runs a local `tofu plan`, and publishes, checks, and prunes images. `lib.sh` holds the bucket-name helpers the others share.
 
 ## Preview locally
 
 Run `mise install` once to get the tool versions that `mise.toml` pins. CI installs from the same file, so local runs and CI use the same versions.
+
+`mise tasks` lists the commands below as tasks, such as `mise run preview`.
 
 Run `scripts/preview.sh` and open http://localhost:8000. It syncs the images from the bucket into `site/images/`, then serves `site/`. Pass a port to use another one. Without AWS credentials it still serves, just without images.
 
@@ -30,7 +32,7 @@ An image upload and its pull request go together:
 3. Commit the `index.html` change and open a pull request.
 4. Merge it.
 
-Upload before you merge, or the page goes live with broken images. Don't upload without opening the pull request. `scripts/prune-images.sh` removes any hashed file the live page doesn't link to once it is older than 7 days, so an upload with no merged pull request gets cleaned out. If a pull request stays open longer than that, run the prune script with a larger `--grace-days`.
+Upload before you merge, or the page goes live with broken images. Don't upload without opening the pull request. `scripts/prune-images.sh` treats any hashed file the live page doesn't link to as removable once it is older than 7 days. Nothing runs it on a schedule, so an upload with no merged pull request stays in the bucket until you run the script. If a pull request stays open longer than that, run the prune script with a larger `--grace-days`.
 
 `scripts/prune-images.sh` prints what it would remove and deletes only with `--delete`.
 

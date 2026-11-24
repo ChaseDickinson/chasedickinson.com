@@ -5,3 +5,20 @@ opentofu = "1.13.9"
 pre-commit = "4.7.0"
 shellcheck = "0.11.0"
 aws-cli = "2.42.1"
+
+# `mise tasks` lists these. Arguments after the task name go to the script.
+[tasks.preview]
+description = "Serve the site at http://localhost:8000"
+run = "scripts/preview.sh"
+
+[tasks.plan]
+description = "Run the read-only tofu plan CI runs on pull requests"
+run = "scripts/plan.sh"
+
+[tasks.publish-images]
+description = "Upload site/images/ under hashed names and relink site/index.html"
+run = "scripts/publish-images.sh"
+
+[tasks.prune-images]
+description = "List bucket images the live page no longer links to (add --delete to remove)"
+run = "scripts/prune-images.sh"

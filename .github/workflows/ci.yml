@@ -98,6 +98,6 @@ jobs:
       # cache time, so a change shows up within a minute and nothing needs an invalidation.
       - name: Sync the site
         run: |
-          bucket="$(aws sts get-caller-identity --query Account --output text)-web-origin"
-          aws s3 sync site "s3://${bucket}" --delete --exclude "images/*" \
+          source scripts/lib.sh
+          aws s3 sync site "s3://$(web_bucket)" --delete --exclude "images/*" \
             --cache-control "public, max-age=60"
