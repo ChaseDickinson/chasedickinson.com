@@ -5,23 +5,47 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Wait 30 days after a release so a compromised one is likely pulled before a PR opens.
+    # Security updates ignore this.
+    cooldown:
+      default-days: 30
     groups:
+      actions-major:
+        patterns: ["*"]
+        update-types: ["major"]
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: pre-commit
     directory: /
     schedule:
       interval: monthly
+    # Wait 30 days after a release so a compromised one is likely pulled before a PR opens.
+    # Security updates ignore this.
+    cooldown:
+      default-days: 30
     groups:
+      hooks-major:
+        patterns: ["*"]
+        update-types: ["major"]
       hooks:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # Reads tofu/.terraform.lock.hcl and the provider constraint in providers.tf.
   - package-ecosystem: terraform
     directory: /tofu
     schedule:
       interval: monthly
+    # Wait 30 days after a release so a compromised one is likely pulled before a PR opens.
+    # Security updates ignore this.
+    cooldown:
+      default-days: 30
     groups:
+      providers-major:
+        patterns: ["*"]
+        update-types: ["major"]
       providers:
         patterns: ["*"]
+        update-types: ["minor", "patch"]

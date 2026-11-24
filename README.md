@@ -19,7 +19,7 @@ Run `scripts/preview.sh` and open http://localhost:8000. It syncs the images fro
 
 ## How changes ship
 
-Every change is a pull request. CI runs the `pre-commit` hooks, `scripts/check-images.sh`, and `tofu plan`, and I read the plan in the Actions log before merging. Merging to `main` runs `tofu apply`, then syncs `site/` to the bucket. The page and fonts cache for 60 seconds, so a page change shows up within about a minute with no invalidation.
+Every change is a pull request. CI runs the `pre-commit` hooks, `scripts/check-images.sh`, and `tofu plan`, and I read the plan on the run's summary page before merging. Merging to `main` runs `tofu apply`, then syncs `site/` to the bucket. The page and fonts cache for 60 seconds, so a page change shows up within about a minute with no invalidation.
 
 ## Images
 
