@@ -267,23 +267,3 @@ resource "aws_route53_record" "alias" {
     evaluate_target_health = false
   }
 }
-
-moved {
-  from = aws_route53_record.website
-  to   = aws_route53_record.alias["chasedickinson.com A"]
-}
-
-moved {
-  from = aws_route53_record.website_ipv6
-  to   = aws_route53_record.alias["chasedickinson.com AAAA"]
-}
-
-moved {
-  from = aws_route53_record.www["A"]
-  to   = aws_route53_record.alias["www.chasedickinson.com A"]
-}
-
-moved {
-  from = aws_route53_record.www["AAAA"]
-  to   = aws_route53_record.alias["www.chasedickinson.com AAAA"]
-}

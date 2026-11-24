@@ -22,6 +22,7 @@ Personal website, served from S3 behind CloudFront. The AWS resources are in `to
 
 - Reading is fine: `tofu plan`, `aws ... describe-*`, `aws ... list-*`.
 - Never delete or destroy a resource. Remove it from `tofu/` and let CI apply the change. The repo owner deletes the bootstrap stack by hand.
+- A `moved` or `import` block is temporary. Add it in the pull request that needs it. Once CI has applied that change and `tofu plan` reports no changes, remove the block in a follow-up pull request. This repo has one state, so nothing else needs the block.
 - Prefer `aws` and `tofu` features over third-party tools. Follow the global rule on installing software.
 
 ## Secrets
